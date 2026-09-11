@@ -45,6 +45,22 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum MaterialRequestStatus {
+  REQUESTED
+  APPROVED
+  ORDERED
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+}
+
+enum EvidenceStage {
+  SHIPMENT
+  FACTORY_RECEIPT
+  PRODUCTION_DELIVERY
+  WAREHOUSE_RECEIPT
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -57,6 +73,8 @@ model User {
   movements      StockMovement[]
   auditLogs      AuditLog[]
   orders         CustomerOrder[]
+  materialRequests MaterialRequest[]
+  evidencePhotos EvidencePhoto[]
 }
 
 model Material {
@@ -75,6 +93,7 @@ model Material {
   stocks         WarehouseStock[]
   components     ProductComponent[]
   movements      StockMovement[]
+  requests       MaterialRequest[]
 }
 
 model MaterialPriceHistory {
@@ -213,6 +232,49 @@ model CustomerOrderItem {
   unitPrice Decimal       @db.Decimal(14, 4)
   order     CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product       @relation(fields: [productId], references: [id])
+}
+
+model MaterialRequest {
+  id            String                @id @default(cuid())
+  requestNo     String                @unique
+  materialId    String
+  requestedById String
+  quantity      Decimal               @db.Decimal(14, 3)
+  unit          String
+  status        MaterialRequestStatus @default(REQUESTED)
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  material      Material              @relation(fields: [materialId], references: [id])
+  requestedBy   User                  @relation(fields: [requestedById], references: [id])
+  @@index([status, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  title     String
+  body      String
+  entity    String?
+  entityId  String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([userId, read, createdAt])
+}
+
+model EvidencePhoto {
+  id             String        @id @default(cuid())
+  stage          EvidenceStage
+  fileName       String
+  storagePath    String
+  mimeType       String
+  size           Int
+  uploadedById   String
+  relatedType    String
+  relatedId      String
+  createdAt      DateTime      @default(now())
+  uploadedBy     User          @relation(fields: [uploadedById], references: [id])
+  @@index([relatedType, relatedId, stage])
 }
 
 model AuditLog {

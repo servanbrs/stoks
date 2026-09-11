@@ -7,12 +7,14 @@ export const navigation: NavSection[] = [
     { label: "Siparişler", href: "/orders", icon: "↗", description: "Müşteri talepleri" },
     { label: "Üretim işleri", href: "/production", icon: "◫", description: "Üretim ve reçeteler" },
     { label: "Sevk ve teslimat", href: "/shipments", icon: "➜", description: "Fabrika süreçleri" },
+    { label: "Teslimat kanıtları", href: "/deliveries", icon: "▣", description: "Fotoğraf arşivi" },
   ] },
   { label: "STOK", description: "Ne var, nerede var?", items: [
     { label: "Stok özeti", href: "/stock-movements", icon: "↔", description: "Hareket ve kritikler" },
     { label: "Malzemeler", href: "/materials", icon: "◈", description: "Şişe, valf, esans..." },
     { label: "Ürünler", href: "/products", icon: "▣", description: "Bitmiş ürünler" },
     { label: "Depolar", href: "/warehouses", icon: "▤", description: "Depo bakiyeleri" },
+    { label: "Malzeme talepleri", href: "/requests", icon: "!", description: "Eksik malzeme istekleri" },
   ] },
   { label: "CARİ VE KAYITLAR", description: "İnsanlar ve finans", items: [
     { label: "Müşteriler", href: "/customers", icon: "♙", description: "Cari hesaplar" },
