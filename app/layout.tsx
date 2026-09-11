@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/sidebar";
+import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: "Stoks | Operasyon Merkezi",
@@ -11,10 +11,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="tr">
       <body>
-        <div className="app-shell">
-          <Sidebar />
-          <main className="min-w-0 flex-1">{children}</main>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
