@@ -72,6 +72,7 @@ model User {
   name           String
   passwordHash   String
   role           Role            @default(WAREHOUSE)
+  factoryId      String?
   active         Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -81,6 +82,7 @@ model User {
   materialRequests MaterialRequest[]
   evidencePhotos EvidencePhoto[]
   payments       Payment[]
+  factory        Factory?        @relation(fields: [factoryId], references: [id])
 }
 
 model Material {
@@ -199,6 +201,7 @@ model Factory {
   notes     String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+  users     User[]
 }
 
 model Customer {
