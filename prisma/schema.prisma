@@ -61,6 +61,11 @@ enum EvidenceStage {
   WAREHOUSE_RECEIPT
 }
 
+enum PaymentDirection {
+  PAYMENT
+  COLLECTION
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -75,6 +80,7 @@ model User {
   orders         CustomerOrder[]
   materialRequests MaterialRequest[]
   evidencePhotos EvidencePhoto[]
+  payments       Payment[]
 }
 
 model Material {
@@ -275,6 +281,19 @@ model EvidencePhoto {
   createdAt      DateTime      @default(now())
   uploadedBy     User          @relation(fields: [uploadedById], references: [id])
   @@index([relatedType, relatedId, stage])
+}
+
+model Payment {
+  id          String          @id @default(cuid())
+  partyName   String
+  amount      Decimal         @db.Decimal(14, 4)
+  currency    Currency
+  direction   PaymentDirection
+  description String?
+  createdById String
+  createdAt   DateTime        @default(now())
+  createdBy   User            @relation(fields: [createdById], references: [id])
+  @@index([partyName, createdAt])
 }
 
 model AuditLog {
