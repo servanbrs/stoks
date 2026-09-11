@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint app components lib --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
