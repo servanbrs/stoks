@@ -17,7 +17,9 @@ export default function SetupPage() {
   async function checkDatabase() {
     setChecking(true);
     const response = await fetch("/api/setup/status", { cache: "no-store" });
-    setStatus(await response.json() as DbStatus);
+    const data = await response.json() as DbStatus;
+    if (data.userCount && data.userCount > 0) { router.replace("/login"); return; }
+    setStatus(data);
     setChecking(false);
   }
 
