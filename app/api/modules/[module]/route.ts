@@ -32,6 +32,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ mo
   if (module === "activity") return NextResponse.json(await db.auditLog.findMany({ include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 100 }));
   if (module === "finance") return NextResponse.json(await db.payment.findMany({ orderBy: { createdAt: "desc" }, take: 200 }));
   if (module === "requests") return NextResponse.json(await db.materialRequest.findMany({ include: { material: true, requestedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } }));
+  if (module === "settings") return NextResponse.json({ database: "Bağlı", schema: "Prisma/MySQL", storage: process.env.STORAGE_DRIVER || "local", note: "Ortam değişkenleri Hostinger panelinden yönetilir." });
   return NextResponse.json({ error: "Bilinmeyen modül." }, { status: 404 });
 }
 
