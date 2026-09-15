@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint app components lib --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
