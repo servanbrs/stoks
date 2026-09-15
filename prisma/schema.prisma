@@ -66,6 +66,20 @@ enum PaymentDirection {
   COLLECTION
 }
 
+enum ProductionStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  PREPARING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -242,6 +256,33 @@ model CustomerOrderItem {
   unitPrice Decimal       @db.Decimal(14, 4)
   order     CustomerOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product       @relation(fields: [productId], references: [id])
+}
+
+model ProductionJob {
+  id          String           @id @default(cuid())
+  jobNo       String           @unique
+  title       String
+  factoryName String?
+  quantity    Decimal          @db.Decimal(14, 3)
+  status      ProductionStatus @default(QUEUED)
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  @@index([status, createdAt])
+}
+
+model Shipment {
+  id          String         @id @default(cuid())
+  shipmentNo  String         @unique
+  fromName    String
+  toName      String
+  itemSummary String
+  quantity    Decimal        @db.Decimal(14, 3)
+  status      ShipmentStatus @default(PREPARING)
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  @@index([status, createdAt])
 }
 
 model MaterialRequest {
