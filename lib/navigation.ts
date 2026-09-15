@@ -22,6 +22,7 @@ export const navigation: NavSection[] = [
     { label: "Cari / ödemeler", href: "/finance", icon: "₺", description: "Tahsilat ve hakediş" },
   ] },
   { label: "SİSTEM", items: [
+    { label: "Kullanıcılar", href: "/users", icon: "◎", description: "Üye ve rol yönetimi" },
     { label: "Aktivite geçmişi", href: "/activity", icon: "☷" },
     { label: "Ayarlar", href: "/settings", icon: "⚙" },
   ] },
