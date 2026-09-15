@@ -82,6 +82,7 @@ model User {
   materialRequests MaterialRequest[]
   evidencePhotos EvidencePhoto[]
   payments       Payment[]
+  permissions    UserPermission[]
   factory        Factory?        @relation(fields: [factoryId], references: [id])
 }
 
@@ -297,6 +298,15 @@ model Payment {
   createdAt   DateTime        @default(now())
   createdBy   User            @relation(fields: [createdById], references: [id])
   @@index([partyName, createdAt])
+}
+
+model UserPermission {
+  id         String   @id @default(cuid())
+  userId     String
+  capability String
+  allowed    Boolean  @default(true)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, capability])
 }
 
 model AuditLog {

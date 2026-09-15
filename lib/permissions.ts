@@ -14,6 +14,21 @@ export type Capability =
   | "manage_inventory"
   | "manage_users";
 
+export const permissionOptions: Array<{ code: Capability; label: string; group: string }> = [
+  { code: "view_assigned_jobs", label: "Atanmış işleri görme", group: "Operasyon" },
+  { code: "view_received_materials", label: "Teslim alınan malzemeleri görme", group: "Operasyon" },
+  { code: "view_delivery_history", label: "Teslimat geçmişini görme", group: "Operasyon" },
+  { code: "view_factory_daily_log", label: "Fabrika günlük kayıtlarını görme", group: "Operasyon" },
+  { code: "accept_assigned_job", label: "İş kabul etme", group: "Operasyon" },
+  { code: "complete_assigned_job", label: "İş teslim etme", group: "Operasyon" },
+  { code: "report_missing_material", label: "Eksik malzeme bildirme", group: "Operasyon" },
+  { code: "upload_job_evidence", label: "Fotoğraf/kanıt yükleme", group: "Operasyon" },
+  { code: "view_payments", label: "Cari ve ödemeleri görme", group: "Finans" },
+  { code: "create_payments", label: "Ödeme/tahsilat ekleme", group: "Finans" },
+  { code: "manage_inventory", label: "Stok ve depo değiştirme", group: "Stok" },
+  { code: "manage_users", label: "Üye ve rol yönetme", group: "Sistem" },
+];
+
 const factoryCapabilities: Capability[] = [
   "view_assigned_jobs",
   "view_received_materials",
