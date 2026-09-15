@@ -80,6 +80,12 @@ enum ShipmentStatus {
   CANCELLED
 }
 
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  CANCELLED
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -175,6 +181,11 @@ model WarehouseStock {
   materialId  String?
   productId   String?
   quantity    Decimal    @db.Decimal(14, 3)
+  locationCode String?
+  shelfCode    String?
+  unitCost     Decimal?   @db.Decimal(14, 4)
+  photoPath    String?
+  lastCountAt  DateTime?
   warehouse   Warehouse  @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   material    Material?  @relation(fields: [materialId], references: [id])
   product     Product?   @relation(fields: [productId], references: [id])
@@ -230,6 +241,7 @@ model Customer {
   active    Boolean         @default(true)
   createdAt DateTime        @default(now())
   orders    CustomerOrder[]
+  invoices  Invoice[]
 }
 
 model CustomerOrder {
@@ -245,6 +257,25 @@ model CustomerOrder {
   customer    Customer            @relation(fields: [customerId], references: [id])
   createdBy   User                @relation(fields: [createdById], references: [id])
   items       CustomerOrderItem[]
+  invoice     Invoice?
+  @@index([customerId, status])
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  invoiceNo   String        @unique
+  orderId     String?       @unique
+  customerId  String
+  status      InvoiceStatus @default(DRAFT)
+  issueDate   DateTime      @default(now())
+  dueDate     DateTime?
+  subtotal    Decimal       @db.Decimal(14, 4)
+  tax         Decimal       @db.Decimal(14, 4)
+  total       Decimal       @db.Decimal(14, 4)
+  currency    Currency
+  notes       String?
+  order       CustomerOrder? @relation(fields: [orderId], references: [id])
+  customer    Customer      @relation(fields: [customerId], references: [id])
   @@index([customerId, status])
 }
 

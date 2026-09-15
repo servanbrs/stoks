@@ -20,6 +20,7 @@ export const navigation: NavSection[] = [
     { label: "Müşteriler", href: "/customers", icon: "♙", description: "Cari hesaplar" },
     { label: "Fabrikalar", href: "/factories", icon: "⌁", description: "Fason üretim" },
     { label: "Cari / ödemeler", href: "/finance", icon: "₺", description: "Tahsilat ve hakediş" },
+    { label: "Faturalar", href: "/invoices", icon: "▤", description: "İrsaliye ve fatura kayıtları" },
   ] },
   { label: "SİSTEM", items: [
     { label: "Kullanıcılar", href: "/users", icon: "◎", description: "Üye ve rol yönetimi" },

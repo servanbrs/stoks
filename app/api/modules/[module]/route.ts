@@ -20,9 +20,9 @@ function code(prefix: string) { return `${prefix}-${Date.now().toString(36).toUp
 export async function GET(_request: NextRequest, context: { params: Promise<{ module: string }> }) {
   if (!await currentUser()) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const { module } = await context.params;
-  if (module === "materials") return NextResponse.json(await db.material.findMany({ orderBy: { createdAt: "desc" } }));
+  if (module === "materials") return NextResponse.json(await db.material.findMany({ include: { stocks: { include: { warehouse: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "products") return NextResponse.json(await db.product.findMany({ include: { components: { include: { material: true } } }, orderBy: { createdAt: "desc" } }));
-  if (module === "warehouses") return NextResponse.json(await db.warehouse.findMany({ include: { stocks: true }, orderBy: { createdAt: "desc" } }));
+  if (module === "warehouses") return NextResponse.json(await db.warehouse.findMany({ include: { stocks: { include: { material: true, product: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "factories") return NextResponse.json(await db.factory.findMany({ include: { users: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "customers") return NextResponse.json(await db.customer.findMany({ include: { orders: { select: { id: true, orderNo: true, status: true, total: true, currency: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "orders") return NextResponse.json(await db.customerOrder.findMany({ include: { customer: true, items: { include: { product: true } } }, orderBy: { createdAt: "desc" } }));
@@ -33,6 +33,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ mo
   if (module === "finance") return NextResponse.json(await db.payment.findMany({ orderBy: { createdAt: "desc" }, take: 200 }));
   if (module === "requests") return NextResponse.json(await db.materialRequest.findMany({ include: { material: true, requestedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "settings") return NextResponse.json({ database: "Bağlı", schema: "Prisma/MySQL", storage: process.env.STORAGE_DRIVER || "local", note: "Ortam değişkenleri Hostinger panelinden yönetilir." });
+  if (module === "invoices") return NextResponse.json(await db.invoice.findMany({ include: { customer: true, order: true }, orderBy: { issueDate: "desc" } }));
   return NextResponse.json({ error: "Bilinmeyen modül." }, { status: 404 });
 }
 
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
       const name = text(body.name), sku = text(body.sku);
       if (!name || !sku) return NextResponse.json({ error: "Malzeme adı ve SKU zorunlu." }, { status: 400 });
       created = await db.material.create({ data: { name, sku, category: text(body.category) || "Genel", unit: text(body.unit) || "adet", minimumStock: number(body.minimumStock) || 0, criticalStock: number(body.criticalStock) || 0, supplier: text(body.supplier) || null } });
+      const warehouseId = text(body.warehouseId);
+      if (warehouseId) await db.warehouseStock.create({ data: { warehouseId, materialId: created.id, quantity: number(body.quantity) || 0, locationCode: text(body.locationCode) || null, shelfCode: text(body.shelfCode) || null, unitCost: number(body.unitCost) || null, photoPath: text(body.photoPath) || null } });
     } else if (module === "products") {
       const name = text(body.name), sku = text(body.sku);
       if (!name || !sku) return NextResponse.json({ error: "Ürün adı ve SKU zorunlu." }, { status: 400 });
@@ -79,6 +82,19 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
       const materialId = text(body.materialId), quantity = number(body.quantity);
       if (!materialId || !Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ error: "Malzeme ve geçerli miktar zorunlu." }, { status: 400 });
       created = await db.materialRequest.create({ data: { requestNo: code("TLP"), materialId, requestedById: user.id, quantity, unit: text(body.unit) || "adet", notes: text(body.notes) || null } });
+    } else if (module === "stock-movements") {
+      const warehouseId = text(body.warehouseId), materialId = text(body.materialId), quantity = number(body.quantity);
+      if (!warehouseId || !materialId || !Number.isFinite(quantity) || quantity === 0) return NextResponse.json({ error: "Depo, malzeme ve sıfır olmayan miktar zorunlu." }, { status: 400 });
+      const existing = await db.warehouseStock.findFirst({ where: { warehouseId, materialId, productId: null } });
+      const nextQuantity = Number(existing?.quantity ?? 0) + quantity;
+      if (nextQuantity < 0) return NextResponse.json({ error: "Stok miktarı eksiye düşemez." }, { status: 400 });
+      if (existing) await db.warehouseStock.update({ where: { id: existing.id }, data: { quantity: nextQuantity, locationCode: text(body.locationCode) || existing.locationCode, shelfCode: text(body.shelfCode) || existing.shelfCode, unitCost: number(body.unitCost) || existing.unitCost } });
+      else await db.warehouseStock.create({ data: { warehouseId, materialId, quantity: nextQuantity, locationCode: text(body.locationCode) || null, shelfCode: text(body.shelfCode) || null, unitCost: number(body.unitCost) || null } });
+      created = await db.stockMovement.create({ data: { type: quantity > 0 ? "PURCHASE" : "ADJUSTMENT", quantity: Math.abs(quantity), unitCost: number(body.unitCost) || null, currency: text(body.currency) === "USD" ? "USD" : "TRY", description: text(body.description) || null, userId: user.id, targetWarehouseId: warehouseId, materialId } });
+    } else if (module === "invoices") {
+      const customerId = text(body.customerId), total = number(body.total), subtotal = number(body.subtotal) || total, tax = number(body.tax) || 0;
+      if (!customerId || !Number.isFinite(total) || total <= 0) return NextResponse.json({ error: "Müşteri ve geçerli toplam zorunlu." }, { status: 400 });
+      created = await db.invoice.create({ data: { invoiceNo: code("FAT"), customerId, subtotal, tax, total, currency: text(body.currency) === "USD" ? "USD" : "TRY", notes: text(body.notes) || null } });
     } else return NextResponse.json({ error: "Bu modülde kayıt ekleme henüz desteklenmiyor." }, { status: 400 });
     await db.auditLog.create({ data: { userId: user.id, action: "CREATE", entity: module, entityId: created.id, metadata: JSON.parse(JSON.stringify(body)) } });
     return NextResponse.json(created, { status: 201 });
