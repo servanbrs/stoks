@@ -30,6 +30,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ mo
   if (module === "shipments") return NextResponse.json(await db.shipment.findMany({ orderBy: { createdAt: "desc" } }));
   if (module === "stock-movements") return NextResponse.json(await db.stockMovement.findMany({ include: { material: true, product: true, user: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 }));
   if (module === "activity") return NextResponse.json(await db.auditLog.findMany({ include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 100 }));
+  if (module === "finance") return NextResponse.json(await db.payment.findMany({ orderBy: { createdAt: "desc" }, take: 200 }));
+  if (module === "requests") return NextResponse.json(await db.materialRequest.findMany({ include: { material: true, requestedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } }));
   return NextResponse.json({ error: "Bilinmeyen modül." }, { status: 404 });
 }
 
@@ -68,6 +70,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
       const fromName = text(body.fromName), toName = text(body.toName), itemSummary = text(body.itemSummary);
       if (!fromName || !toName || !itemSummary) return NextResponse.json({ error: "Çıkış, varış ve içerik zorunlu." }, { status: 400 });
       created = await db.shipment.create({ data: { shipmentNo: code("SEV"), fromName, toName, itemSummary, quantity: number(body.quantity) || 0, notes: text(body.notes) || null } });
+    } else if (module === "finance") {
+      const partyName = text(body.partyName), amount = number(body.amount);
+      if (!partyName || !Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: "Kişi/firma ve geçerli tutar zorunlu." }, { status: 400 });
+      created = await db.payment.create({ data: { partyName, amount, currency: text(body.currency) === "USD" ? "USD" : "TRY", direction: text(body.direction) === "COLLECTION" ? "COLLECTION" : "PAYMENT", description: text(body.description) || null, createdById: user.id } });
+    } else if (module === "requests") {
+      const materialId = text(body.materialId), quantity = number(body.quantity);
+      if (!materialId || !Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ error: "Malzeme ve geçerli miktar zorunlu." }, { status: 400 });
+      created = await db.materialRequest.create({ data: { requestNo: code("TLP"), materialId, requestedById: user.id, quantity, unit: text(body.unit) || "adet", notes: text(body.notes) || null } });
     } else return NextResponse.json({ error: "Bu modülde kayıt ekleme henüz desteklenmiyor." }, { status: 400 });
     await db.auditLog.create({ data: { userId: user.id, action: "CREATE", entity: module, entityId: created.id, metadata: JSON.parse(JSON.stringify(body)) } });
     return NextResponse.json(created, { status: 201 });
