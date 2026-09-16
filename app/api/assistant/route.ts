@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/session";
+import { demoList, isDemoMode } from "@/lib/demo-store";
 
 export const runtime = "nodejs";
 
 async function currentUser() {
   const token = (await cookies()).get(sessionCookie)?.value;
   if (!token) return null;
-  try { const session = await verifySession(token); return await db.user.findUnique({ where: { email: session.email }, select: { id: true, role: true } }); } catch { return null; }
+  try { const session = await verifySession(token); if (isDemoMode()) return { id: "local-demo-admin", role: "ADMIN" }; return await db.user.findUnique({ where: { email: session.email }, select: { id: true, role: true } }); } catch { return null; }
 }
 
 function money(value: number) { return value.toLocaleString("tr-TR", { maximumFractionDigits: 2 }); }
@@ -19,6 +20,13 @@ export async function POST(request: NextRequest) {
   const message = body.message?.trim() || "";
   if (!message) return NextResponse.json({ reply: "Buradayım. Bugünün planını, eksik stokları, açık fabrika işlerini veya cari kayıtları sorabilirsin.", actions: [] });
   const normalized = message.toLocaleLowerCase("tr-TR");
+  if (isDemoMode()) {
+    const [materials, production, requests, shipments] = await Promise.all([demoList("materials"), demoList("production"), demoList("requests"), demoList("shipments")]);
+    const shortages = materials.filter((item) => Number(item.quantity ?? 0) <= Number(item.criticalStock ?? item.minimumStock ?? 0));
+    if (normalized.includes("eksik") || normalized.includes("stok") || normalized.includes("malzeme")) return NextResponse.json({ reply: `Demo stok kontrolü tamamlandı.\n\n${shortages.length ? shortages.map((item) => `${String(item.name)}: ${String(item.quantity ?? 0)} ${String(item.unit ?? "adet")} kaldı`).join("\n") : "Kritik seviyede malzeme görünmüyor."}\n\n${requests.length} açık malzeme talebi var.`, actions: [{ label: "Malzemeler", href: "/materials" }, { label: "Talepler", href: "/requests" }] });
+    if (normalized.includes("fabrika") || normalized.includes("iş") || normalized.includes("üretim")) return NextResponse.json({ reply: `${production.length} üretim işi ve ${shipments.length} sevkiyat kaydı var.\n\n${production.map((item) => `${String(item.jobNo ?? "İş")} · ${String(item.title ?? "Üretim")} · ${String(item.factoryName ?? "Fabrika atanmadı")}`).join("\n") || "Açık üretim işi yok."}`, actions: [{ label: "Üretim", href: "/production" }, { label: "Sevkiyat", href: "/shipments" }] });
+    return NextResponse.json({ reply: `Bugünkü demo özeti:\n\n${shortages.length} kritik stok\n${production.length} üretim işi\n${requests.length} açık talep\n${shipments.length} sevkiyat kaydı\n\nİstersen eksik stokları, fabrika işlerini veya sevkiyatları birlikte açalım.`, actions: [{ label: "Dashboard", href: "/" }, { label: "Depolar", href: "/warehouses" }] });
+  }
   const [materials, jobs, requests, shipments] = await Promise.all([
     db.material.findMany({ include: { stocks: true }, orderBy: { name: "asc" } }),
     db.productionJob.findMany({ where: { status: { in: ["QUEUED", "IN_PROGRESS"] } }, orderBy: { createdAt: "asc" } }),
