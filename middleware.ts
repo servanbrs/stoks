@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sessionCookie, verifySession } from "@/lib/session";
 
-const publicPaths = ["/", "/login", "/setup", "/api/auth/login", "/api/setup", "/_next", "/favicon.ico"];
+const publicPaths = ["/login", "/setup", "/api/auth/login", "/api/setup", "/_next", "/favicon.ico"];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (publicPaths.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}/`))) return NextResponse.next();
+  if (path === "/" || publicPaths.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}/`))) return NextResponse.next();
   const token = request.cookies.get(sessionCookie)?.value;
   if (!token) return path.startsWith("/api/") ? NextResponse.json({ error: "Oturum gerekli" }, { status: 401 }) : NextResponse.redirect(new URL(`/login?returnTo=${encodeURIComponent(path)}`, request.url));
   try {
