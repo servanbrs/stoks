@@ -45,8 +45,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
   try {
     let created: { id: string };
     if (module === "materials") {
-      const name = text(body.name), sku = text(body.sku);
-      if (!name || !sku) return NextResponse.json({ error: "Malzeme adı ve SKU zorunlu." }, { status: 400 });
+      const name = text(body.name), sku = text(body.sku) || `MLZ-${Date.now().toString(36).toUpperCase()}`;
+      if (!name) return NextResponse.json({ error: "Malzeme adı zorunlu." }, { status: 400 });
       created = await db.material.create({ data: { name, sku, category: text(body.category) || "Genel", unit: text(body.unit) || "adet", minimumStock: number(body.minimumStock) || 0, criticalStock: number(body.criticalStock) || 0, supplier: text(body.supplier) || null } });
       const warehouseId = text(body.warehouseId);
       if (warehouseId) await db.warehouseStock.create({ data: { warehouseId, materialId: created.id, quantity: number(body.quantity) || 0, locationCode: text(body.locationCode) || null, shelfCode: text(body.shelfCode) || null, unitCost: number(body.unitCost) || null, photoPath: text(body.photoPath) || null } });
