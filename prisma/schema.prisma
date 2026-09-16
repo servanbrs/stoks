@@ -307,7 +307,32 @@ model ProductionJob {
   deliveredAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  costSnapshots ProductionCostSnapshot[]
   @@index([status, createdAt])
+}
+
+model ProductionCostSnapshot {
+  id              String         @id @default(cuid())
+  productionJobId String
+  materialId      String?
+  label           String
+  quantity        Decimal        @db.Decimal(14, 3)
+  unitCost        Decimal        @db.Decimal(14, 4)
+  currency        Currency
+  exchangeRate    Decimal        @db.Decimal(14, 6)
+  convertedAmount Decimal        @db.Decimal(14, 4)
+  createdAt       DateTime       @default(now())
+  productionJob   ProductionJob  @relation(fields: [productionJobId], references: [id], onDelete: Cascade)
+  @@index([productionJobId])
+}
+
+model ExchangeRate {
+  id         String   @id @default(cuid())
+  pair       String   @default("USDTRY")
+  rate       Decimal  @db.Decimal(14, 6)
+  source     String   @default("manual")
+  capturedAt DateTime @default(now())
+  @@index([pair, capturedAt])
 }
 
 model Shipment {

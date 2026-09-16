@@ -8,7 +8,7 @@ const statePath = path.join(process.cwd(), ".local-demo-data.json");
 
 export function isDemoMode() { return process.env.NODE_ENV !== "production" && existsSync(path.join(process.cwd(), ".local-demo")); }
 const seed: DemoState = {
-  materials: [{ id: "demo-material-valf", name: "Pirinç valf", sku: "MLZ-VALF-001", category: "Valf", unit: "adet", minimumStock: 500, criticalStock: 150, supplier: "Demo Tedarikçi", quantity: 2400, locationCode: "D1-A-03", shelfCode: "Raf 03", createdAt: "2026-09-16" }],
+  materials: [{ id: "demo-material-valf", name: "Pirinç valf", sku: "MLZ-VALF-001", category: "Valf", unit: "adet", minimumStock: 500, criticalStock: 150, supplier: "Demo Tedarikçi", quantity: 2400, unitCost: 14.5, locationCode: "D1-A-03", shelfCode: "Raf 03", createdAt: "2026-09-16" }],
   products: [{ id: "demo-product-parfum", name: "Noir Essence 50 ml", sku: "URN-NOIR-050", brand: "Stoks Demo", salePrice: 850, currency: "TRY", createdAt: "2026-09-16" }],
   warehouses: [{ id: "demo-warehouse-main", name: "Merkez Demo Depo", active: true, createdAt: "2026-09-16" }],
   factories: [{ id: "demo-factory-1", name: "Demo Üretim Fabrikası", contact: "Ayşe Demir", phone: "0212 000 00 00", active: true, createdAt: "2026-09-16" }],
@@ -21,6 +21,7 @@ const seed: DemoState = {
   invoices: [{ id: "demo-invoice-1", invoiceNo: "FAT-DEMO-001", customer: { name: "Demo Kozmetik Mağazası" }, total: 12500, currency: "TRY", status: "DRAFT", issueDate: "2026-09-16" }],
   "stock-movements": [{ id: "demo-movement-1", type: "PURCHASE", material: { name: "Pirinç valf" }, quantity: 2400, description: "Demo başlangıç stoğu", createdAt: "2026-09-16" }],
   activity: [{ id: "demo-activity-1", action: "DEMO", entity: "SYSTEM", metadata: { message: "Demo mod aktif" }, createdAt: "2026-09-16" }],
+  exchangeRates: [{ id: "demo-fx-1", pair: "USDTRY", rate: 41.25, source: "manual", capturedAt: "2026-09-16T10:00:00.000Z", createdAt: "2026-09-16" }],
   salesAssets: [{ id: "demo-asset-1", title: "Noir Essence sosyal medya görseli", status: "READY", prompt: "Lüks stüdyo çekimi demo kreatifi", createdAt: "2026-09-16" }],
   salesCampaigns: [{ id: "demo-campaign-1", name: "Sonbahar lansmanı", channel: "Instagram", status: "SCHEDULED", caption: "Yeni Noir Essence şimdi keşfet", scheduledAt: "2026-09-20T10:00:00.000Z", createdAt: "2026-09-16" }],
   salesLeads: [{ id: "demo-lead-1", fullName: "Demo Beauty Store", company: "Demo Beauty Store", email: "demo@example.com", source: "2018 İstanbul Kozmetik Fuarı", consentStatus: "PENDING", status: "NEW", createdAt: "2026-09-16" }],

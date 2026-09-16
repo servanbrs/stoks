@@ -29,9 +29,12 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ mo
   if (module === "factories") return NextResponse.json(await db.factory.findMany({ include: { users: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "customers") return NextResponse.json(await db.customer.findMany({ include: { orders: { select: { id: true, orderNo: true, status: true, total: true, currency: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "orders") return NextResponse.json(await db.customerOrder.findMany({ include: { customer: true, items: { include: { product: true } } }, orderBy: { createdAt: "desc" } }));
-  if (module === "production") return NextResponse.json(await db.productionJob.findMany({ orderBy: { createdAt: "desc" } }));
+  if (module === "production") {
+    try { return NextResponse.json(await db.productionJob.findMany({ include: { costSnapshots: true }, orderBy: { createdAt: "desc" } })); }
+    catch { return NextResponse.json(await db.productionJob.findMany({ orderBy: { createdAt: "desc" } })); }
+  }
   if (module === "shipments") return NextResponse.json(await db.shipment.findMany({ orderBy: { createdAt: "desc" } }));
-  if (module === "stock-movements") return NextResponse.json(await db.stockMovement.findMany({ include: { material: true, product: true, user: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 }));
+  if (module === "stock-movements") return NextResponse.json(await db.stockMovement.findMany({ include: { material: true, product: true, user: { select: { name: true } }, sourceWarehouse: true, targetWarehouse: true }, orderBy: { createdAt: "desc" }, take: 100 }));
   if (module === "activity") return NextResponse.json(await db.auditLog.findMany({ include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 100 }));
   if (module === "finance") return NextResponse.json(await db.payment.findMany({ orderBy: { createdAt: "desc" }, take: 200 }));
   if (module === "requests") return NextResponse.json(await db.materialRequest.findMany({ include: { material: true, requestedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } }));
@@ -106,6 +109,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
       if (existing) await db.warehouseStock.update({ where: { id: existing.id }, data: { quantity: nextQuantity, locationCode: text(body.locationCode) || existing.locationCode, shelfCode: text(body.shelfCode) || existing.shelfCode, unitCost: number(body.unitCost) || existing.unitCost } });
       else await db.warehouseStock.create({ data: { warehouseId, materialId, quantity: nextQuantity, locationCode: text(body.locationCode) || null, shelfCode: text(body.shelfCode) || null, unitCost: number(body.unitCost) || null } });
       created = await db.stockMovement.create({ data: { type: quantity > 0 ? "PURCHASE" : "ADJUSTMENT", quantity: Math.abs(quantity), unitCost: number(body.unitCost) || null, currency: text(body.currency) === "USD" ? "USD" : "TRY", description: text(body.description) || null, userId: user.id, targetWarehouseId: warehouseId, materialId } });
+      const cost = number(body.unitCost);
+      if (Number.isFinite(cost) && cost > 0 && quantity > 0) {
+        const fx = Number(body.exchangeRate) || 1;
+        await db.materialPriceHistory.create({ data: { materialId, amount: cost, currency: text(body.currency) === "USD" ? "USD" : "TRY", exchangeRate: fx, convertedAmount: text(body.currency) === "USD" ? cost * fx : cost } });
+      }
     } else if (module === "invoices") {
       const customerId = text(body.customerId), total = number(body.total), subtotal = number(body.subtotal) || total, tax = number(body.tax) || 0;
       if (!customerId || !Number.isFinite(total) || total <= 0) return NextResponse.json({ error: "Müşteri ve geçerli toplam zorunlu." }, { status: 400 });

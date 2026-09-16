@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { demoCreate, demoList, demoUpdate, isDemoMode } from "@/lib/demo-store";
+import { snapshotProductionJob } from "@/lib/production-cost";
 import { sessionCookie, verifySession } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -57,8 +58,15 @@ export async function POST(request: NextRequest) {
     if (!["ADMIN", "ACCOUNTING", "PRODUCTION"].includes(user.role)) return NextResponse.json({ error: "Bu rol üretim işi oluşturamaz." }, { status: 403 });
     const title = text(body.title), quantity = number(body.quantity); if (!title || !Number.isFinite(quantity) || quantity <= 0) return NextResponse.json({ error: "İş adı ve miktar zorunlu." }, { status: 400 });
     const data = { jobNo: code("URE"), title, orderId: text(body.orderId) || null, productId: text(body.productId) || null, factoryId: text(body.factoryId) || null, factoryName: text(body.factoryName) || null, quantity, costPerUnit: Number.isFinite(number(body.costPerUnit)) ? number(body.costPerUnit) : null, status: "QUEUED" as const, notes: text(body.notes) || null };
-    if (isDemoMode()) return NextResponse.json(await demoCreate("production", data), { status: 201 });
-    return NextResponse.json(await db.productionJob.create({ data }), { status: 201 });
+    if (isDemoMode()) return NextResponse.json({ ...(await demoCreate("production", data)), ready: true }, { status: 201 });
+    const job = await db.productionJob.create({ data });
+    try {
+      const snapshot = await snapshotProductionJob(job.id, data.productId, quantity, data.costPerUnit);
+      return NextResponse.json({ ...job, ...snapshot }, { status: 201 });
+    } catch (error) {
+      console.error(error);
+      return NextResponse.json({ ...job, ready: true, shortages: [], warning: "Maliyet snapshot yazılamadı; iş yine de oluşturuldu." }, { status: 201 });
+    }
   }
   if (action === "update-job") {
     const id = text(body.id), status = text(body.status); if (!id || !["QUEUED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(status)) return NextResponse.json({ error: "İş ve durum zorunlu." }, { status: 400 });
