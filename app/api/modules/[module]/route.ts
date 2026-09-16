@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/session";
+import { demoCreate, demoDelete, demoList, demoUpdate, isDemoMode } from "@/lib/demo-store";
 
 export const runtime = "nodejs";
 
 async function currentUser() {
+  if (isDemoMode()) return { id: "local-demo-admin", email: "servansecgul@gmail.com", role: "ADMIN" as const };
   const token = (await cookies()).get(sessionCookie)?.value;
   if (!token) return null;
   try {
@@ -20,6 +22,7 @@ function code(prefix: string) { return `${prefix}-${Date.now().toString(36).toUp
 export async function GET(_request: NextRequest, context: { params: Promise<{ module: string }> }) {
   if (!await currentUser()) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const { module } = await context.params;
+  if (isDemoMode() && module !== "settings") return NextResponse.json(await demoList(module));
   if (module === "materials") return NextResponse.json(await db.material.findMany({ include: { stocks: { include: { warehouse: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "products") return NextResponse.json(await db.product.findMany({ include: { components: { include: { material: true } } }, orderBy: { createdAt: "desc" } }));
   if (module === "warehouses") return NextResponse.json(await db.warehouse.findMany({ include: { stocks: { include: { material: true, product: true } } }, orderBy: { createdAt: "desc" } }));
@@ -53,6 +56,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
   if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const { module } = await context.params;
   const body = await request.json() as Record<string, unknown>;
+  if (isDemoMode()) return NextResponse.json(await demoCreate(module, body), { status: 201 });
   try {
     let created: { id: string };
     if (module === "materials") {
@@ -122,6 +126,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ m
   const body = await request.json() as Record<string, unknown>;
   const id = text(body.id);
   if (!id) return NextResponse.json({ error: "Kayıt ID zorunlu." }, { status: 400 });
+  if (isDemoMode()) return NextResponse.json(await demoUpdate(module, id, body));
   try {
     let updated;
     if (module === "materials") {
@@ -151,6 +156,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   const { module } = await context.params;
   const id = text(new URL(request.url).searchParams.get("id"));
   if (!id) return NextResponse.json({ error: "Kayıt ID zorunlu." }, { status: 400 });
+  if (isDemoMode()) return NextResponse.json(await demoDelete(module, id));
   try {
     if (module === "materials") {
       const [movementCount, requestCount, componentCount] = await Promise.all([

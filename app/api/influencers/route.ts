@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/session";
+import { demoCreate, demoList, isDemoMode } from "@/lib/demo-store";
 
 export const runtime = "nodejs";
 
 async function currentUser() {
+  if (isDemoMode()) return { id: "local-demo-admin" };
   const token = (await cookies()).get(sessionCookie)?.value;
   if (!token) return null;
   try {
@@ -18,6 +20,7 @@ function integer(value: unknown) { const parsed = Number(value); return Number.i
 
 export async function GET() {
   if (!await currentUser()) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  if (isDemoMode()) return NextResponse.json({ profiles: await demoList("influencerProfiles"), collaborations: await demoList("influencerCollaborations") });
   const [profiles, collaborations] = await Promise.all([
     db.influencerProfile.findMany({ include: { collaborations: { orderBy: { createdAt: "desc" }, take: 10 } }, orderBy: { createdAt: "desc" }, take: 200 }),
     db.influencerCollaboration.findMany({ include: { influencer: true }, orderBy: { createdAt: "desc" }, take: 200 }),
@@ -30,6 +33,11 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const body = await request.json() as Record<string, unknown>;
   const action = text(body.action);
+  if (isDemoMode()) {
+    const collection = action === "profile" ? "influencerProfiles" : action === "collaboration" ? "influencerCollaborations" : "";
+    if (!collection) return NextResponse.json({ error: "Demo modunda bu işlem desteklenmiyor." }, { status: 400 });
+    return NextResponse.json(await demoCreate(collection, body), { status: 201 });
+  }
   try {
     if (action === "profile") {
       const displayName = text(body.displayName), platform = text(body.platform);

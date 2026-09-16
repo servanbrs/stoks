@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/session";
+import { demoCreate, demoList, isDemoMode } from "@/lib/demo-store";
 
 export const runtime = "nodejs";
 
 async function currentUser() {
+  if (isDemoMode()) return { id: "local-demo-admin", role: "ADMIN" as const };
   const token = (await cookies()).get(sessionCookie)?.value;
   if (!token) return null;
   try {
@@ -18,6 +20,7 @@ function text(value: unknown) { return typeof value === "string" ? value.trim() 
 
 export async function GET() {
   if (!await currentUser()) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  if (isDemoMode()) return NextResponse.json({ assets: await demoList("salesAssets"), campaigns: await demoList("salesCampaigns"), leads: await demoList("salesLeads"), emails: await demoList("salesEmails") });
   const [assets, campaigns, leads, emails] = await Promise.all([
     db.salesAsset.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     db.salesCampaign.findMany({ orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }], take: 50 }),
@@ -32,6 +35,12 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
   const body = await request.json() as Record<string, unknown>;
   const action = text(body.action);
+  if (isDemoMode()) {
+    const map: Record<string, string> = { asset: "salesAssets", campaign: "salesCampaigns", lead: "salesLeads", email: "salesEmails" };
+    const collection = map[action];
+    if (!collection) return NextResponse.json({ error: "Geçersiz satış işlemi." }, { status: 400 });
+    return NextResponse.json(await demoCreate(collection, body), { status: 201 });
+  }
   try {
     if (action === "asset") {
       const title = text(body.title);
