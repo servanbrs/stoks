@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { navigation } from "@/lib/navigation";
+import { LogoutButton } from "@/components/logout-button";
 
 export function Sidebar() {
   return (
@@ -14,7 +15,7 @@ export function Sidebar() {
           <div className="space-y-1">{section.items.map((item, itemIndex) => <Link key={item.href} href={item.href as never} className={itemIndex === 0 && index === 0 ? "flex items-center gap-3 rounded-lg bg-[#202735] px-3 py-2.5 text-sm font-medium text-white" : "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted transition hover:bg-[#171e29] hover:text-white"}><span className="w-5 text-center text-accent">{item.icon}</span><span className="min-w-0"><span className="block">{item.label}</span>{item.description && <span className="hidden truncate text-[10px] text-[#596575] lg:block">{item.description}</span>}</span></Link>)}</div>
         </div>)}
       </nav>
-      <div className="mt-10 rounded-xl border border-line bg-[#11161e] p-3"><div className="mb-2 flex items-center justify-between"><span className="eyebrow">Demo ortamı</span><span className="h-2 w-2 rounded-full bg-success" /></div><p className="m-0 text-xs leading-5 text-muted">Operasyon verileri güvenli şekilde tek merkezde.</p></div>
+      <div className="mt-10 rounded-xl border border-line bg-[#11161e] p-3"><div className="mb-2 flex items-center justify-between"><span className="eyebrow">Canlı sistem</span><span className="h-2 w-2 rounded-full bg-success" /></div><p className="m-0 text-xs leading-5 text-muted">Operasyon verileri güvenli şekilde tek merkezde.</p><LogoutButton /></div>
     </aside>
   );
 }
