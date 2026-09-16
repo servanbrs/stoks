@@ -24,6 +24,7 @@ export const navigation: NavSection[] = [
   ] },
   { label: "SATIŞ VE PAZARLAMA", description: "İçerik, lead ve kampanya", items: [
     { label: "Satış merkezi", href: "/sales", icon: "✦", description: "Kreatif, yayın ve müşteri akışı" },
+    { label: "Influencer iş birlikleri", href: "/influencers", icon: "◎", description: "Ürün karşılığı creator yönetimi" },
   ] },
   { label: "SİSTEM", items: [
     { label: "Kullanıcılar", href: "/users", icon: "◎", description: "Üye ve rol yönetimi" },

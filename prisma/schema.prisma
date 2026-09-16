@@ -455,3 +455,48 @@ model SalesEmail {
   lead        SalesLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
   @@index([status, scheduledAt])
 }
+
+model InfluencerProfile {
+  id              String   @id @default(cuid())
+  displayName     String
+  platform        String
+  handle          String?
+  profileUrl      String?
+  niche           String?
+  country         String?
+  followerCount   Int?
+  averageViews    Int?
+  engagementRate  Decimal? @db.Decimal(8, 3)
+  productOnly     Boolean  @default(true)
+  email           String?
+  phone           String?
+  source          String?
+  consentStatus   String   @default("UNKNOWN")
+  contactStatus   String   @default("NOT_CONTACTED")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  collaborations  InfluencerCollaboration[]
+  @@index([platform, productOnly, contactStatus])
+  @@index([niche, followerCount])
+}
+
+model InfluencerCollaboration {
+  id            String             @id @default(cuid())
+  influencerId  String
+  productId     String?
+  offerType     String             @default("PRODUCT_ONLY")
+  status        String             @default("DRAFT")
+  deliverables  String?
+  message       String?
+  productQty    Decimal?           @db.Decimal(14, 3)
+  shippedAt     DateTime?
+  dueDate       DateTime?
+  contentUrl    String?
+  result        String?
+  createdById   String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  influencer    InfluencerProfile @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  @@index([status, dueDate])
+}
