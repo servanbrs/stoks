@@ -9,6 +9,43 @@ body { margin: 0; background: #0a0d12; color: #f4f6f8; font-family: Arial, Helve
 .eyebrow { color: #8490a1; font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .card { border: 1px solid #202935; border-radius: 14px; background: rgba(17,22,30,.86); box-shadow: 0 18px 45px rgba(0,0,0,.12); }
 .grid-lines { background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 32px 32px; }
+.assistant-root { position: fixed; right: 24px; bottom: 22px; z-index: 60; }
+.assistant-panel { position: absolute; right: 0; bottom: 76px; width: min(410px, calc(100vw - 32px)); overflow: hidden; border: 1px solid rgba(70,224,255,.32); border-radius: 22px; background: rgba(7,14,27,.92); box-shadow: 0 24px 90px rgba(0,0,0,.48), 0 0 40px rgba(64,192,255,.12); backdrop-filter: blur(24px); opacity: 0; pointer-events: none; transform: translateY(16px) scale(.96); transform-origin: bottom right; transition: opacity .28s, transform .28s; }
+.assistant-panel-open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+.assistant-header { position: relative; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(112,184,255,.14); background: linear-gradient(110deg, rgba(27,54,91,.7), rgba(16,25,50,.45)); padding: 14px 16px; }
+.assistant-avatar { position: relative; display: grid; height: 40px; width: 40px; place-items: center; border: 1px solid rgba(80,231,255,.6); border-radius: 50%; background: radial-gradient(circle, #6af5ee 0 8%, #277ea4 28%, #15154f 70%); box-shadow: 0 0 22px rgba(45,226,230,.32); }
+.assistant-avatar-core { color: #06121c; font-size: 18px; text-shadow: 0 0 12px white; }
+.assistant-avatar i { position: absolute; inset: -5px; border: 1px solid rgba(100,215,255,.26); border-radius: 50%; animation: assistant-orbit 4s linear infinite; }
+.assistant-avatar i:nth-child(2) { inset: -10px; animation-duration: 6s; animation-direction: reverse; }
+.assistant-avatar i:nth-child(3) { inset: -15px; border-style: dashed; opacity: .45; animation-duration: 9s; }
+.assistant-status { margin-top: 3px; color: rgba(182,211,235,.58); font-family: monospace; font-size: 9px; letter-spacing: .05em; }
+.assistant-status span { display: inline-block; height: 5px; width: 5px; margin-right: 5px; border-radius: 50%; background: #68f4ba; box-shadow: 0 0 8px #68f4ba; }
+.assistant-close { margin-left: auto; color: rgba(255,255,255,.5); font-size: 22px; }
+.assistant-body { position: relative; max-height: 370px; overflow-y: auto; padding: 14px; }
+.assistant-code-layer { position: absolute; top: 10px; right: 12px; color: rgba(76,232,255,.05); font-family: monospace; font-size: 10px; line-height: 1.8; pointer-events: none; }
+.assistant-messages { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.assistant-message { max-width: 92%; border: 1px solid rgba(87,170,219,.15); border-radius: 13px 13px 13px 3px; background: rgba(31,48,74,.7); padding: 10px 11px; color: rgba(239,247,255,.8); font-size: 11px; line-height: 1.65; }
+.assistant-message-user { align-self: flex-end; border-radius: 13px 13px 3px 13px; border-color: rgba(127,102,255,.28); background: rgba(94,68,185,.28); color: rgba(255,255,255,.9); }
+.assistant-action { display: inline-block; border: 1px solid rgba(87,226,255,.35); border-radius: 999px; padding: 4px 8px; color: #6deaff; font-size: 9px; }
+.assistant-suggestions { display: flex; gap: 6px; overflow-x: auto; border-top: 1px solid rgba(112,184,255,.12); padding: 10px 14px 0; scrollbar-width: none; }
+.assistant-suggestions button { flex: 0 0 auto; border: 1px solid rgba(90,198,255,.2); border-radius: 999px; background: rgba(69,131,198,.1); padding: 5px 8px; color: rgba(200,229,255,.7); font-size: 9px; }
+.assistant-suggestions button:hover { border-color: rgba(96,231,255,.7); color: #6deaff; }
+.assistant-form { display: flex; gap: 8px; padding: 10px 14px 14px; }
+.assistant-form input { min-width: 0; flex: 1; border: 1px solid rgba(100,192,255,.22); border-radius: 11px; background: rgba(0,8,18,.65); padding: 10px 11px; color: white; font-size: 11px; outline: none; }
+.assistant-form input:focus { border-color: rgba(97,232,255,.72); box-shadow: 0 0 0 3px rgba(45,226,230,.08); }
+.assistant-form button { width: 36px; border: 1px solid rgba(93,235,255,.45); border-radius: 10px; background: linear-gradient(135deg, #55e7e9, #8270ff); color: #07111c; font-size: 18px; font-weight: 900; }
+.assistant-form button:disabled { opacity: .35; }
+.assistant-orb { position: relative; display: grid; height: 64px; width: 64px; place-items: center; border: 1px solid rgba(99,230,255,.58); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8ef9e8 0 8%, #2e8cbe 24%, #1a1a66 60%, #090d1b 100%); box-shadow: 0 0 26px rgba(46,218,255,.35), inset 0 0 18px rgba(118,102,255,.35); color: #d8fbff; transition: transform .3s, box-shadow .3s; }
+.assistant-orb:hover, .assistant-orb-open { transform: scale(1.08); box-shadow: 0 0 38px rgba(46,218,255,.5), inset 0 0 24px rgba(118,102,255,.5); }
+.assistant-orb-ring { position: absolute; border: 1px solid rgba(107,220,255,.55); border-radius: 50%; pointer-events: none; }
+.ring-one { inset: -7px; border-top-color: transparent; border-bottom-color: rgba(140,114,255,.7); animation: assistant-orbit 4s linear infinite; }
+.ring-two { inset: -13px; border-right-color: transparent; border-left-color: rgba(93,238,255,.45); animation: assistant-orbit 7s linear infinite reverse; }
+.assistant-orb-core { position: relative; font-size: 21px; text-shadow: 0 0 13px white; animation: assistant-breathe 2.5s ease-in-out infinite; }
+.assistant-orb-label { position: absolute; bottom: -18px; color: rgba(117,223,255,.65); font-family: monospace; font-size: 8px; letter-spacing: .15em; }
+.assistant-typing i { display: inline-block; height: 5px; width: 5px; margin-right: 3px; border-radius: 50%; background: #6deaff; animation: assistant-breathe 1s infinite; }
+.assistant-typing i:nth-child(2) { animation-delay: .15s; }.assistant-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes assistant-orbit { to { transform: rotate(360deg); } }
+@keyframes assistant-breathe { 50% { opacity: .42; transform: scale(.78); } }
 .login-page { position: relative; min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 50% 0%, #101b32 0, #080a12 48%); color: #f4f6f8; }
 .login-page::before { content: ""; position: absolute; inset: -45%; background: conic-gradient(from 0deg, transparent 0deg, rgba(216,185,121,.08) 55deg, transparent 110deg, rgba(112,91,203,.08) 190deg, transparent 250deg); animation: spin-slow 24s linear infinite; }
 .login-page::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .12; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(88,220,255,.09) 4px, transparent 5px); mix-blend-mode: screen; animation: scan 8s linear infinite; }
