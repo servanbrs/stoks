@@ -103,3 +103,63 @@ export async function POST(request: NextRequest, context: { params: Promise<{ mo
     return NextResponse.json({ error: "Kayıt oluşturulamadı. Zorunlu alanları ve benzersiz SKU değerini kontrol edin." }, { status: 400 });
   }
 }
+
+export async function PATCH(request: NextRequest, context: { params: Promise<{ module: string }> }) {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const { module } = await context.params;
+  const body = await request.json() as Record<string, unknown>;
+  const id = text(body.id);
+  if (!id) return NextResponse.json({ error: "Kayıt ID zorunlu." }, { status: 400 });
+  try {
+    let updated;
+    if (module === "materials") {
+      const name = text(body.name);
+      if (!name) return NextResponse.json({ error: "Malzeme adı zorunlu." }, { status: 400 });
+      updated = await db.material.update({ where: { id }, data: { name, sku: text(body.sku) || undefined, category: text(body.category) || "Genel", unit: text(body.unit) || "adet", minimumStock: number(body.minimumStock) || 0, criticalStock: number(body.criticalStock) || 0, supplier: text(body.supplier) || null } });
+    } else if (module === "products") {
+      updated = await db.product.update({ where: { id }, data: { name: text(body.name), sku: text(body.sku), brand: text(body.brand) || null, barcode: text(body.barcode) || null, volumeMl: number(body.volumeMl) || null, salePrice: number(body.salePrice) || null, currency: text(body.currency) === "USD" ? "USD" : "TRY" } });
+    } else if (module === "warehouses") {
+      updated = await db.warehouse.update({ where: { id }, data: { name: text(body.name) } });
+    } else if (module === "factories") {
+      updated = await db.factory.update({ where: { id }, data: { name: text(body.name), contact: text(body.contact) || null, phone: text(body.phone) || null, address: text(body.address) || null, notes: text(body.notes) || null } });
+    } else if (module === "customers") {
+      updated = await db.customer.update({ where: { id }, data: { name: text(body.name), contact: text(body.contact) || null, phone: text(body.phone) || null, address: text(body.address) || null, notes: text(body.notes) || null, currency: text(body.currency) === "USD" ? "USD" : "TRY" } });
+    } else return NextResponse.json({ error: "Bu modülde düzenleme henüz desteklenmiyor." }, { status: 400 });
+    await db.auditLog.create({ data: { userId: user.id, action: "UPDATE", entity: module, entityId: id, metadata: JSON.parse(JSON.stringify(body)) } });
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Kayıt güncellenemedi. ID ve alanları kontrol edin." }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: NextRequest, context: { params: Promise<{ module: string }> }) {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+  const { module } = await context.params;
+  const id = text(new URL(request.url).searchParams.get("id"));
+  if (!id) return NextResponse.json({ error: "Kayıt ID zorunlu." }, { status: 400 });
+  try {
+    if (module === "materials") {
+      const [movementCount, requestCount, componentCount] = await Promise.all([
+        db.stockMovement.count({ where: { materialId: id } }),
+        db.materialRequest.count({ where: { materialId: id } }),
+        db.productComponent.count({ where: { materialId: id } }),
+      ]);
+      if (movementCount || requestCount || componentCount) return NextResponse.json({ error: "Bu malzeme stok hareketi, talep veya ürün reçetesine bağlı olduğu için silinemez. Pasif yapmak daha güvenli." }, { status: 409 });
+      await db.warehouseStock.deleteMany({ where: { materialId: id } });
+      await db.materialPriceHistory.deleteMany({ where: { materialId: id } });
+      await db.material.delete({ where: { id } });
+    } else if (module === "products") await db.product.delete({ where: { id } });
+    else if (module === "warehouses") await db.warehouse.delete({ where: { id } });
+    else if (module === "factories") await db.factory.delete({ where: { id } });
+    else if (module === "customers") await db.customer.delete({ where: { id } });
+    else return NextResponse.json({ error: "Bu modülde silme henüz desteklenmiyor." }, { status: 400 });
+    await db.auditLog.create({ data: { userId: user.id, action: "DELETE", entity: module, entityId: id } });
+    return NextResponse.json({ ok: true, id });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Kayıt silinemedi. Bağlı kayıtları kontrol edin." }, { status: 400 });
+  }
+}
