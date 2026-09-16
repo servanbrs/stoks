@@ -4,6 +4,7 @@ export type NavSection = { label?: string; description?: string; items: NavItem[
 export const navigation: NavSection[] = [
   { items: [{ label: "Genel bakış", href: "/", icon: "⌂", description: "Tüm operasyonun özeti" }] },
   { label: "GÜNLÜK İŞLER", description: "Siparişten teslimata", items: [
+    { label: "Operasyon planı", href: "/operations", icon: "⌁", description: "İhtiyaçtan teslime tek akış" },
     { label: "Siparişler", href: "/orders", icon: "↗", description: "Müşteri talepleri" },
     { label: "Üretim işleri", href: "/production", icon: "◫", description: "Üretim ve reçeteler" },
     { label: "Sevk ve teslimat", href: "/shipments", icon: "➜", description: "Fabrika süreçleri" },

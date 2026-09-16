@@ -293,10 +293,18 @@ model ProductionJob {
   id          String           @id @default(cuid())
   jobNo       String           @unique
   title       String
+  orderId     String?
+  productId   String?
+  factoryId   String?
   factoryName String?
   quantity    Decimal          @db.Decimal(14, 3)
+  costPerUnit Decimal?         @db.Decimal(14, 4)
   status      ProductionStatus @default(QUEUED)
   notes       String?
+  missingNotes String?
+  acceptedAt  DateTime?
+  completedAt DateTime?
+  deliveredAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   @@index([status, createdAt])
